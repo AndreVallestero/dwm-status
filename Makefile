@@ -1,7 +1,8 @@
 CC ?= gcc
 
-dep_path = /usr
+INSTALPATH = /usr/local
 
+dep_path = /usr
 INCLUDES = -I$(dep_path)/include
 LIBRARIES = -L$(dep_path)/lib
 
@@ -23,3 +24,11 @@ $(objects): %.o: %.c $(headers) Makefile
 
 clean:
 	$(RM) $(TARGET) $(objects)
+
+install: all
+	mkdir -p ${INSTALPATH}/bin
+	cp -f $(TARGET) ${INSTALPATH}/bin
+	chmod a+x ${INSTALPATH}/bin/$(TARGET)
+
+uninstall:
+	rm -f ${INSTALPATH}/bin/$(TARGET)

@@ -13,10 +13,7 @@ void update_time(void);
 
 int main(void) {
     // Set process to lowest priority for less CPU usage, needs privileges?
-    printf(setpriority(PRIO_PROCESS, 0, INT_MAX) ?
-        "Priority could not be set, try again with elevated privileges" :
-        "Priority successfully set");
-    fflush(stdout);
+    setpriority(PRIO_PROCESS, 0, INT_MAX);
 
     int timeInterval = 1;
     int timeNextUpdate = 0;

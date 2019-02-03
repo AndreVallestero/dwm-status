@@ -30,11 +30,7 @@ int main(void) {
 
         if(printFlag)
             print_status();
-
-        //struct timespec ts;
-        //ts.tv_sec = 1;
-        //ts.tv_nsec = 0;
-        //nanosleep(&ts, NULL);
+        
         sleep(1);
     }
     return 0;

@@ -22,7 +22,7 @@ int main(void) {
         int printFlag = 0;
         int currTime = time(NULL);
 
-        if(timeNextUpdate < currTime) {
+        if(currTime >= timeNextUpdate) {
             timeNextUpdate = currTime + timeInterval;
             update_time();
             printFlag = 1;

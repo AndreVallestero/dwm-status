@@ -133,7 +133,7 @@ int main(void) {
 
 void print_status(void) {
     char execString[256];
-    sprintf(execString, "xsetroot -name \"%s|%s|%s|%s|%s|%s\"",
+    sprintf(execString, "xsetroot -name \"%s%s%s%s%s%s\"",
         weatherString, cpuString, memoryString, networkString, batteryString, timeString);
     system(execString);
 }
@@ -142,7 +142,7 @@ void update_news(void) {
 
 }
 
-void update_weather(void) {
+void update_pacman(void) {
 
 }
 
@@ -154,10 +154,32 @@ void update_weather(void) {
 
 }
 
+//top -b -n2 -p 1 | fgrep "Cpu(s)" | tail -1 | awk -F'id,' -v prefix="$prefix" '{ split($1, vs, ","); v=vs[length(vs)]; sub("%", "", v); printf "%s%.1f%%\n", prefix, 100 - v }'
+// use `sensors` for cpu temps
 void update_cpu(void) {
+    char content[256];
+    FILE *filePtr = fopen("/proc/stat", "r");
+    fscanf(filePtr, "%[^\n]", content);
+    fclose(filePtr);
 
+    int usage = 0;
+
+    int index = 0;
+    char* splice = strtok(content," ");
+    while (splice != NULL) {
+        if (index == 1 || index == 3)
+            usage += atoi(splice);
+        else if (index == 4) {
+            sprintf(cpuString, "|💻%d%%", usage * 100 / (usage + atoi(splice)));
+            printFlag = 1;
+            return;
+        }
+        splice = strtok(NULL, " ");
+        ++index;
+    }
 }
 
+// use `free -h`
 void update_memory(void) {
 
 }
@@ -171,7 +193,7 @@ void update_battery(void) {
 }
 
 void update_time(time_t currTime) {
-    strftime(timeString, 26, "%Y-%m-%d %H:%M:%S", localtime(&currTime));
+    strftime(timeString, 26, "|📅%Y-%m-%d %H:%M:%S", localtime(&currTime));
     printFlag = 1;
 }
 

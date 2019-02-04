@@ -58,7 +58,7 @@ void update_news(void);
 void update_pkgup(void);
 void update_torrent(void);
 void update_weather(void);
-void update_cpu(time_t);
+void update_cpu(void);
 void update_memory(void);
 void update_network(void);
 void update_battery(void);
@@ -111,7 +111,7 @@ int main(void) {
             update_weather();
         } if (cpuNextUpdate <= currTime) {
             cpuNextUpdate = currTime + CPU_INTERVAL;
-            update_cpu(currTime);
+            update_cpu();
         } if (memoryNextUpdate <= currTime) {
             memoryNextUpdate = currTime + MEMORY_INTERVAL;
             update_memory();
@@ -177,7 +177,7 @@ void update_weather(void) {
 
 }
 
-void update_cpu(time_t currTime) {
+void update_cpu(void) {
     // Usage module
     long double cpuData[4];
     FILE* filePtr = fopen("/proc/stat","r");

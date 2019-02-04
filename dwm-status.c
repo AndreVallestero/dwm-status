@@ -32,6 +32,9 @@
 
 int printFlag = 0;
 
+long prevCpuUsage = 0L;
+long prevCpuIdle = 0L;
+
 char recordString[8];
 char musicString[32];
 char newsString[8];
@@ -52,7 +55,7 @@ void update_news(void);
 void update_pacman(void);
 void update_torrent(void);
 void update_weather(void);
-void update_cpu(void);
+void update_cpu(time_t);
 void update_memory(void);
 void update_network(void);
 void update_battery(void);
@@ -105,7 +108,7 @@ int main(void) {
             update_weather();
         } if (cpuNextUpdate <= currTime) {
             cpuNextUpdate = currTime + CPU_INTERVAL;
-            update_cpu();
+            update_cpu(currTime);
         } if (memoryNextUpdate <= currTime) {
             memoryNextUpdate = currTime + MEMORY_INTERVAL;
             update_memory();
@@ -154,29 +157,27 @@ void update_weather(void) {
 
 }
 
-//top -b -n2 -p 1 | fgrep "Cpu(s)" | tail -1 | awk -F'id,' -v prefix="$prefix" '{ split($1, vs, ","); v=vs[length(vs)]; sub("%", "", v); printf "%s%.1f%%\n", prefix, 100 - v }'
-// use `sensors` for cpu temps
-void update_cpu(void) {
-    char content[256];
-    FILE *filePtr = fopen("/proc/stat", "r");
-    fscanf(filePtr, "%[^\n]", content);
+void update_cpu(time_t currTime) {
+    // Usage module
+    long double cpuData[4];
+    FILE* filePtr = fopen("/proc/stat","r");
+    fscanf(filePtr,"%*s %Lf %Lf %Lf %Lf",&cpuData[0],&cpuData[1],&cpuData[2],&cpuData[3]);
     fclose(filePtr);
 
-    int usage = 0;
+    long currCpuUsage = cpuData[0]+cpuData[1]+cpuData[2];
+    double cpuUsagePercent = (currCpuUsage - prevCpuUsage) * 100. / (currCpuUsage+cpuData[3] - prevCpuUsage-prevCpuIdle);
 
-    int index = 0;
-    char* splice = strtok(content," ");
-    while (splice != NULL) {
-        if (index == 1 || index == 3)
-            usage += atoi(splice);
-        else if (index == 4) {
-            sprintf(cpuString, "|💻%d%%", usage * 100 / (usage + atoi(splice)));
-            printFlag = 1;
-            return;
-        }
-        splice = strtok(NULL, " ");
-        ++index;
-    }
+    prevCpuUsage = currCpuUsage;
+    prevCpuIdle = cpuData[3];
+
+    // Temperature module
+    float cpuTemp;
+    FILE* pipePtr = popen("sensors -A -u", "r");
+    fscanf(pipePtr, "%*[^\n]\nPackage id 0:\n temp1_input: %f", &cpuTemp);
+    pclose(pipePtr);
+
+    sprintf(cpuString, "|💻%%%.1f@%.1f°C", cpuUsagePercent, cpuTemp);
+    printFlag = 1;
 }
 
 // use `free -h`

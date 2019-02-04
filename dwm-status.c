@@ -19,6 +19,8 @@
 #define WEATHER_INTERVAL 600
 #define CPU_INTERVAL 10
 #define MEMORY_INTERVAL 10
+#define VOLUME_INTERVAL 10
+#define BRIGHTNESS_INTERVAL 10
 #define NETWORK_INTERVAL 10
 #define BATTERY_INTERVAL 60
 #define TIME_INTERVAL 1
@@ -38,18 +40,18 @@ int printFlag = 0;
 long prevCpuUsage = 0L;
 long prevCpuIdle = 0L;
 
-char recordString[8] = {0};
+char recordString[16] = {0};
 char musicString[32] = {0};
-char newsString[8] = {0};
-char pkgupString[8] = {0};
+char newsString[16] = {0};
+char pkgupString[16] = {0};
 char torrentString[16] = {0};
 char weatherString[24] = {0};
 char cpuString[32] = {0};
 char memoryString[32] = {0};
-char volumeString[8] = {0};
-char brightnessString[8] = {0};
-char networkString[8] = {0};
-char batteryString[8] = {0};
+char volumeString[32] = {0};
+char brightnessString[16] = {0};
+char networkString[16] = {0};
+char batteryString[16] = {0};
 char timeString[24] = {0}; 
 
 void print_status(void);
@@ -60,6 +62,8 @@ void update_torrent(void);
 void update_weather(void);
 void update_cpu(void);
 void update_memory(void);
+void update_volume(void);
+void update_brightness(void);
 void update_network(void);
 void update_battery(void);
 void update_time(time_t);
@@ -76,6 +80,8 @@ int main(void) {
     // Set process to lowest priority for less CPU usage, needs privileges?
     setpriority(PRIO_PROCESS, 0, INT_MAX);
     
+    music_sighand(0);
+
     signal(RECORD_SIGNAL, record_sighand);
     signal(MUSIC_SIGNAL, music_sighand);
     signal(PKGUP_SIGNAL, pkgup_sighand);
@@ -89,6 +95,8 @@ int main(void) {
     int weatherNextUpdate = 0;
     int cpuNextUpdate = 0;
     int memoryNextUpdate = 0;
+    int volumeNextUpdate = 0;
+    int brightnessNextUpdate = 0;
     int networkNextUpdate = 0;
     int batteryNextUpdate = 0;
     int timeNextUpdate = 0;
@@ -115,6 +123,12 @@ int main(void) {
         } if (memoryNextUpdate <= currTime) {
             memoryNextUpdate = currTime + MEMORY_INTERVAL;
             update_memory();
+        } if (volumeNextUpdate <= currTime) {
+            volumeNextUpdate = currTime + VOLUME_INTERVAL;
+            update_volume();
+        } if (brightnessNextUpdate <= currTime) {
+            brightnessNextUpdate = currTime + BRIGHTNESS_INTERVAL;
+            update_brightness();
         } if (networkNextUpdate <= currTime) {
             networkNextUpdate = currTime + NETWORK_INTERVAL;
             update_network();
@@ -143,7 +157,6 @@ void print_status(void) {
         recordString, musicString, newsString, pkgupString, torrentString,
         weatherString, cpuString, memoryString, volumeString, brightnessString,
         networkString, batteryString, timeString);
-
     system(execString);
 }
 
@@ -196,7 +209,7 @@ void update_cpu(void) {
     fscanf(pipePtr, "%*[^\n]\nPackage id 0:\n temp1_input: %f", &cpuTemp);
     pclose(pipePtr);
 
-    sprintf(cpuString, "|💻%%%.1f@%.1f°C", cpuUsagePercent, cpuTemp);
+    sprintf(cpuString, "|💻%.1f%%@%.1f°C", cpuUsagePercent, cpuTemp);
     printFlag = 1;
 }
 
@@ -208,6 +221,39 @@ void update_memory(void) {
 
     sprintf(memoryString, "|🧠%s/%s", used, total);
     printFlag = 1;
+}
+
+void update_volume(void) {
+    int mute, volume;
+    char icon[8] = {0}, volVal[8] = {0};
+
+    FILE* pipePtr = popen("pulsemixer --get-mute", "r");
+    fscanf(pipePtr, "%d", &mute);
+    pclose(pipePtr);
+
+    if(mute)
+        strcpy(icon, "🔇");
+    else {
+        FILE* pipePtr = popen("pulsemixer --get-volume", "r");
+        fscanf(pipePtr, "%d", &volume);
+        pclose(pipePtr);
+
+        if(volume > 70)
+            strcpy(icon, "🔊");
+        else if (volume > 30)
+            strcpy(icon, "🔉");
+        else
+            strcpy(icon, "🔈");
+
+        sprintf(volVal, "%d%%", volume);
+    }  
+
+    sprintf(volumeString, "|%s%s", icon, volVal);
+    printFlag = 1;
+}
+
+void update_brightness(void) {
+
 }
 
 void update_network(void) {
@@ -240,7 +286,7 @@ void torrent_sighand(int signal) {
 }
 
 void volume_sighand(int signal) {
-
+    update_volume();
 }
 
 void brightness_sighand(int signal) {

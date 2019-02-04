@@ -14,7 +14,7 @@
 
 // Interval in seconds to auto-update modules, other modules are updated manually using signal
 #define NEWS_INTERVAL 300
-#define PACMAN_INTERVAL 600
+#define pkgup_INTERVAL 600
 #define TORRENT_INTERVAL 10
 #define WEATHER_INTERVAL 600
 #define CPU_INTERVAL 10
@@ -23,36 +23,39 @@
 #define BATTERY_INTERVAL 60
 #define TIME_INTERVAL 1
 
-// Signal IDs, use 34 and higher to avoid interfearing with critical signals
+// Usage:
+//  kill -s [SIGNAL_CODES] $(pidof dwm-status)
+// Signal codes. Use 34 and higher to avoid interfearing with critical signals
 #define RECORD_SIGNAL 34
 #define MUSIC_SIGNAL 35
-#define TORRENT_SIGNAL 36
-#define VOLUME_SIGNAL 37
-#define BRIGHTNESS_SIGNAL 38
+#define PKGUP_SIGNAL 36
+#define TORRENT_SIGNAL 37
+#define VOLUME_SIGNAL 38
+#define BRIGHTNESS_SIGNAL 39
 
 int printFlag = 0;
 
 long prevCpuUsage = 0L;
 long prevCpuIdle = 0L;
 
-char recordString[8];
-char musicString[32];
-char newsString[8];
-char pacmanString[8];
-char torrentString[16];
-char weatherString[24];
-char cpuString[8];
-char memoryString[8];
-char volumeString[8];
-char brightnessString[8];
-char networkString[8];
-char batteryString[8];
-char timeString[24]; 
+char recordString[8] = {0};
+char musicString[32] = {0};
+char newsString[8] = {0};
+char pkgupString[8] = {0};
+char torrentString[16] = {0};
+char weatherString[24] = {0};
+char cpuString[32] = {0};
+char memoryString[32] = {0};
+char volumeString[8] = {0};
+char brightnessString[8] = {0};
+char networkString[8] = {0};
+char batteryString[8] = {0};
+char timeString[24] = {0}; 
 
 void print_status(void);
 
 void update_news(void);
-void update_pacman(void);
+void update_pkgup(void);
 void update_torrent(void);
 void update_weather(void);
 void update_cpu(time_t);
@@ -64,6 +67,7 @@ void update_time(time_t);
 // Signal handlers
 void record_sighand(int);
 void music_sighand(int);
+void pkgup_sighand(int);
 void torrent_sighand(int);
 void volume_sighand(int);
 void brightness_sighand(int);
@@ -71,17 +75,16 @@ void brightness_sighand(int);
 int main(void) {
     // Set process to lowest priority for less CPU usage, needs privileges?
     setpriority(PRIO_PROCESS, 0, INT_MAX);
-    printf("%d", getpid());
-    fflush(stdout);
     
     signal(RECORD_SIGNAL, record_sighand);
     signal(MUSIC_SIGNAL, music_sighand);
+    signal(PKGUP_SIGNAL, pkgup_sighand);
     signal(TORRENT_SIGNAL, torrent_sighand);
     signal(VOLUME_SIGNAL, volume_sighand);
     signal(BRIGHTNESS_SIGNAL, brightness_sighand);
 
     int newsNextUpdate = 0;
-    int pacmanNextUpdate = 0;
+    int pkgupNextUpdate = 0;
     int torrentNextUpdate = 0;
     int weatherNextUpdate = 0;
     int cpuNextUpdate = 0;
@@ -97,9 +100,9 @@ int main(void) {
         if (newsNextUpdate <= currTime) {
             newsNextUpdate = currTime + NEWS_INTERVAL;
             update_news();
-        } if (pacmanNextUpdate <= currTime) {
-            pacmanNextUpdate = currTime + PACMAN_INTERVAL;
-            update_pacman();
+        } if (pkgupNextUpdate <= currTime) {
+            pkgupNextUpdate = currTime + pkgup_INTERVAL;
+            update_pkgup();
         } if (torrentNextUpdate <= currTime) {
             torrentNextUpdate = currTime + TORRENT_INTERVAL;
             update_torrent();
@@ -136,8 +139,11 @@ int main(void) {
 
 void print_status(void) {
     char execString[256];
-    sprintf(execString, "xsetroot -name \"%s%s%s%s%s%s\"",
-        weatherString, cpuString, memoryString, networkString, batteryString, timeString);
+    sprintf(execString, "xsetroot -name \"%s%s%s%s%s%s%s%s%s%s%s%s%s\"",
+        recordString, musicString, newsString, pkgupString, torrentString,
+        weatherString, cpuString, memoryString, volumeString, brightnessString,
+        networkString, batteryString, timeString);
+
     system(execString);
 }
 
@@ -145,8 +151,22 @@ void update_news(void) {
 
 }
 
-void update_pacman(void) {
+void update_pkgup(void) {
+    int ch, pkgCount = 0;
 
+    FILE* pipePtr = popen("yay -Qu", "r");
+    do {
+        ch = fgetc(pipePtr);
+        if(ch == '\n')
+            ++pkgCount;
+    } while (ch != EOF);
+    pclose(pipePtr);
+
+    if (pkgCount)
+        sprintf(pkgupString, "|📦%d", pkgCount);
+    else
+        pkgupString[0] = '\0';
+    printFlag = 1;
 }
 
 void update_torrent(void) {
@@ -180,9 +200,14 @@ void update_cpu(time_t currTime) {
     printFlag = 1;
 }
 
-// use `free -h`
 void update_memory(void) {
+    char total[8], used[8];
+    FILE* pipePtr = popen("free -h", "r");
+    fscanf(pipePtr, "%*[^\n]\n%*s %s %s", total, used);
+    pclose(pipePtr);
 
+    sprintf(memoryString, "|🧠%s/%s", used, total);
+    printFlag = 1;
 }
 
 void update_network(void) {
@@ -204,6 +229,10 @@ void record_sighand(int signal) {
 
 void music_sighand(int signal) {
 
+}
+
+void pkgup_sighand(int signal) {
+    update_pkgup();
 }
 
 void torrent_sighand(int signal) {

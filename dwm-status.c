@@ -11,6 +11,7 @@
 
 // Frequency per second to check for updates and signals
 #define UPDATE_RATE 10
+#define SLEEP_TIME 1000000000L / UPDATE_RATE
 
 // Interval in seconds to auto-update modules, other modules are updated manually using signal
 #define NEWS_INTERVAL 300
@@ -23,7 +24,7 @@
 #define BRIGHTNESS_INTERVAL 10
 #define NETWORK_INTERVAL 10
 #define BATTERY_INTERVAL 60
-#define TIME_INTERVAL 10
+#define TIME_INTERVAL 1
 
 // Usage:
 //  kill -s [SIGNAL_CODES] $(pidof dwm-status)
@@ -147,7 +148,7 @@ int main(void) {
 
         struct timespec ts;
         ts.tv_sec = 0;
-        ts.tv_nsec = 1000000000L / UPDATE_RATE;
+        ts.tv_nsec = SLEEP_TIME;
         nanosleep(&ts, NULL);
     }
     return 0;

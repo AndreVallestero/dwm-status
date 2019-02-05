@@ -23,7 +23,7 @@
 #define BRIGHTNESS_INTERVAL 10
 #define NETWORK_INTERVAL 10
 #define BATTERY_INTERVAL 60
-#define TIME_INTERVAL 1
+#define TIME_INTERVAL 10
 
 // Usage:
 //  kill -s [SIGNAL_CODES] $(pidof dwm-status)
@@ -102,7 +102,6 @@ int main(void) {
     int timeNextUpdate = 0;
 
     while (1) {
-        printFlag = 0;
         time_t currTime = time(NULL);
 
         if (newsNextUpdate <= currTime) {
@@ -141,7 +140,10 @@ int main(void) {
         }
 
         // Only print at most once per update and only if data needed updating
-        if (printFlag) print_status();
+        if (printFlag) {
+            printFlag = 0;
+            print_status();
+        }
 
         struct timespec ts;
         ts.tv_sec = 0;

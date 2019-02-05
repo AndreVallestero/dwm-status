@@ -14,7 +14,7 @@
 
 // Interval in seconds to auto-update modules, other modules are updated manually using signal
 #define NEWS_INTERVAL 300
-#define pkgup_INTERVAL 600
+#define PKGUP_INTERVAL 600
 #define TORRENT_INTERVAL 10
 #define WEATHER_INTERVAL 600
 #define CPU_INTERVAL 10
@@ -108,7 +108,7 @@ int main(void) {
             newsNextUpdate = currTime + NEWS_INTERVAL;
             update_news();
         } if (pkgupNextUpdate <= currTime) {
-            pkgupNextUpdate = currTime + pkgup_INTERVAL;
+            pkgupNextUpdate = currTime + PKGUP_INTERVAL;
             update_pkgup();
         } if (torrentNextUpdate <= currTime) {
             torrentNextUpdate = currTime + TORRENT_INTERVAL;

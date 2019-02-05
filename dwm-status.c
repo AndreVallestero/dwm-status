@@ -11,7 +11,6 @@
 
 // Frequency per second to check for updates and signals
 #define UPDATE_RATE 10
-#define SLEEP_TIME 1000000000L / UPDATE_RATE
 
 // Interval in seconds to auto-update modules, other modules are updated manually using signal
 #define NEWS_INTERVAL 300
@@ -148,7 +147,7 @@ int main(void) {
 
         struct timespec ts;
         ts.tv_sec = 0;
-        ts.tv_nsec = SLEEP_TIME;
+        ts.tv_nsec = 1000000000L / UPDATE_RATE;
         nanosleep(&ts, NULL);
     }
     return 0;

@@ -6,6 +6,7 @@
 #include <sys/resource.h>
 #include <limits.h>
 #include <signal.h>
+#include <wordexp.h>
 
 #define WEATHER_API ""
 
@@ -55,6 +56,7 @@ char batteryString[16] = {0};
 char timeString[24] = {0}; 
 
 void print_status(void);
+int expand_path(char*, char*);
 
 void update_news(void);
 void update_pkgup(void);
@@ -151,15 +153,6 @@ int main(void) {
         nanosleep(&ts, NULL);
     }
     return 0;
-}
-
-void print_status(void) {
-    char execString[256];
-    sprintf(execString, "xsetroot -name \"%s%s%s%s%s%s%s%s%s%s%s%s%s\"",
-        recordString, musicString, newsString, pkgupString, torrentString,
-        weatherString, cpuString, memoryString, volumeString, brightnessString,
-        networkString, batteryString, timeString);
-    system(execString);
 }
 
 void update_news(void) {
@@ -259,7 +252,37 @@ void update_brightness(void) {
 }
 
 void update_network(void) {
+    char networkStatus[8] = {0}, pathBuffer[256];
 
+    if(!expand_path(pathBuffer, "/sys/class/net/e*/operstate")) {
+        FILE* filePtr = fopen(pathBuffer, "r");
+        fscanf(filePtr, "%s", networkStatus);
+        fclose(filePtr);
+    }
+
+
+    if (!strcmp(networkStatus, "up"))
+        strcpy(networkString, "|🌐");
+    else {
+        if(!expand_path(pathBuffer, "/sys/class/net/w*/operstate")) {
+            FILE* filePtr = fopen(pathBuffer, "r");
+            fscanf(filePtr, "%s", networkStatus);
+            fclose(filePtr);
+        }
+
+        if (!strcmp(networkStatus, "down"))
+            strcpy(networkString, "|⚠️🌐");
+        else {
+            FILE* filePtr = fopen("/proc/net/wireless", "r");
+            fscanf(filePtr, "%*[^\n]\n%*[^\n]\n %*s %*s %s", networkStatus);
+            fclose(filePtr);
+
+            sprintf(networkString, "|📶%.0f%%", strtof(networkStatus, NULL) * 100 / 70);
+            fflush(stdout);
+        }
+    }
+
+    printFlag = 1;
 }
 
 void update_battery(void) {
@@ -293,4 +316,29 @@ void volume_sighand(int signal) {
 
 void brightness_sighand(int signal) {
 
+}
+
+// Helper functions
+
+// Prints stringn to xsetroot
+void print_status(void) {
+    char execString[256];
+    sprintf(execString, "xsetroot -name \"%s%s%s%s%s%s%s%s%s%s%s%s%s\"",
+        recordString, musicString, newsString, pkgupString, torrentString,
+        weatherString, cpuString, memoryString, volumeString, brightnessString,
+        networkString, batteryString, timeString);
+    system(execString);
+}
+
+// Expands path using shell pattern matching expansion
+//  pathStringSource | Input path string to be expanded
+//  pathStringDest | Make sure it's bigger than inPath string or else smashing will occur
+//  returns 0 on success, -1 on failure
+int expand_path(char* pathStringDest, char* pathStringSource) {
+    wordexp_t path;
+    if (wordexp(pathStringSource, &path, 0)) return -1;
+    strcpy(pathStringDest, path.we_wordv[0]);
+    for(int i = 1; i < path.we_wordc; ++i)
+        strcat(pathStringDest, path.we_wordv[i]);
+    return 0;
 }

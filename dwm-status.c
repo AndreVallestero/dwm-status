@@ -172,7 +172,7 @@ void update_pkgup(void) {
     pclose(pipePtr);
 
     if (pkgCount)
-        sprintf(pkgupString, "|📦%d", pkgCount);
+        sprintf(pkgupString, " 📦%d", pkgCount);
     else
         pkgupString[0] = '\0';
     printFlag = 1;
@@ -205,7 +205,7 @@ void update_cpu(void) {
     fscanf(pipePtr, "%*[^\n]\nPackage id 0:\n temp1_input: %f", &cpuTemp);
     pclose(pipePtr);
 
-    sprintf(cpuString, "|💻%.1f%%@%.1f°C", cpuUsagePercent, cpuTemp);
+    sprintf(cpuString, " 💻%.1f%%@%.1f°C", cpuUsagePercent, cpuTemp);
     printFlag = 1;
 }
 
@@ -215,7 +215,7 @@ void update_memory(void) {
     fscanf(pipePtr, "%*[^\n]\n%*s %s %s", total, used);
     pclose(pipePtr);
 
-    sprintf(memoryString, "|🧠%s/%s", used, total);
+    sprintf(memoryString, " 🧠%s/%s", used, total);
     printFlag = 1;
 }
 
@@ -244,7 +244,7 @@ void update_volume(void) {
         sprintf(volVal, "%d%%", volume);
     }  
 
-    sprintf(volumeString, "|%s%s", icon, volVal);
+    sprintf(volumeString, " %s%s", icon, volVal);
     printFlag = 1;
 }
 
@@ -252,6 +252,7 @@ void update_brightness(void) {
 
 }
 
+// TODO: maybe add local ip after icon?
 void update_network(void) {
     char networkStatus[8] = {0}, pathBuffer[256];
 
@@ -263,7 +264,7 @@ void update_network(void) {
 
 
     if (!strcmp(networkStatus, "up"))
-        strcpy(networkString, "|🌐");
+        strcpy(networkString, " 🌐");
     else {
         if(!expand_path(pathBuffer, "/sys/class/net/w*/operstate")) {
             FILE* filePtr = fopen(pathBuffer, "r");
@@ -272,13 +273,13 @@ void update_network(void) {
         }
 
         if (!strcmp(networkStatus, "down"))
-            strcpy(networkString, "|⚠️🌐");
+            strcpy(networkString, " ⚠️🌐");
         else {
             FILE* filePtr = fopen("/proc/net/wireless", "r");
             fscanf(filePtr, "%*[^\n]\n%*[^\n]\n %*s %*s %s", networkStatus);
             fclose(filePtr);
 
-            sprintf(networkString, "|📶%.0f%%", strtof(networkStatus, NULL) * 100 / 70);
+            sprintf(networkString, " 📶%.0f%%", strtof(networkStatus, NULL) * 100 / 70);
             fflush(stdout);
         }
     }
@@ -291,7 +292,7 @@ void update_battery(void) {
 }
 
 void update_time(time_t currTime) {
-    strftime(timeString, 26, "|📅%b %d %H:%M", localtime(&currTime));
+    strftime(timeString, 26, " 📅%a%d%b 🕓%H:%M ", localtime(&currTime));
     printFlag = 1;
 }
 

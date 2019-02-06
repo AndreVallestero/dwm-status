@@ -24,11 +24,12 @@
 #define BRIGHTNESS_INTERVAL 10
 #define NETWORK_INTERVAL 10
 #define BATTERY_INTERVAL 60
-#define TIME_INTERVAL 1
+#define TIME_INTERVAL 60
 
 // Usage:
 //  kill -s [SIGNAL_CODES] $(pidof dwm-status)
-// Signal codes. Use 34 and higher to avoid interfearing with critical signals
+//  static const char *volupcmd[]  = { "sh", "-c", "pulsemixer --change-volume 5; kill -s 38 $(pidof dwm-status)", NULL };
+//  Signal codes. Use 34 and higher to avoid interfearing with critical signals
 #define RECORD_SIGNAL 34
 #define MUSIC_SIGNAL 35
 #define PKGUP_SIGNAL 36
@@ -290,7 +291,7 @@ void update_battery(void) {
 }
 
 void update_time(time_t currTime) {
-    strftime(timeString, 26, "|📅%Y-%m-%d %H:%M:%S", localtime(&currTime));
+    strftime(timeString, 26, "|📅%b %d %H:%M", localtime(&currTime));
     printFlag = 1;
 }
 

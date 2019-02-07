@@ -256,7 +256,7 @@ void update_brightness(void) {
 
 }
 
-// TODO: refactor. This code is slow garbage
+// TODO: refactor. This code is slow garbage. Store string in buffer and sprintf all at the same time
 void update_network(void) {
     // Network strength/status module
     char networkStatus[8] = {0}, pathBuffer[256];
@@ -347,7 +347,7 @@ void brightness_sighand(int signal) {
 
 // Prints stringn to xsetroot
 void print_status(void) {
-    char execString[256];
+    char execString[512];
     sprintf(execString, "xsetroot -name \"%s%s%s%s%s%s%s%s%s%s%s%s%s\"",
         recordString, musicString, newsString, pkgupString, torrentString,
         weatherString, cpuString, memoryString, volumeString, brightnessString,

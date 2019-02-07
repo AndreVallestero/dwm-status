@@ -7,6 +7,10 @@
 #include <limits.h>
 #include <signal.h>
 #include <wordexp.h>
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <arpa/inet.h>
+#include <net/if.h>
 
 #define WEATHER_API ""
 
@@ -52,7 +56,7 @@ char cpuString[32] = {0};
 char memoryString[32] = {0};
 char volumeString[32] = {0};
 char brightnessString[16] = {0};
-char networkString[16] = {0};
+char networkString[128] = {0};
 char batteryString[16] = {0};
 char timeString[24] = {0}; 
 
@@ -252,8 +256,9 @@ void update_brightness(void) {
 
 }
 
-// TODO: maybe add local ip after icon?
+// TODO: refactor. This code is slow garbage
 void update_network(void) {
+    // Network strength/status module
     char networkStatus[8] = {0}, pathBuffer[256];
 
     if(!expand_path(pathBuffer, "/sys/class/net/e*/operstate")) {
@@ -261,7 +266,6 @@ void update_network(void) {
         fscanf(filePtr, "%s", networkStatus);
         fclose(filePtr);
     }
-
 
     if (!strcmp(networkStatus, "up"))
         strcpy(networkString, " 🌐");
@@ -272,18 +276,37 @@ void update_network(void) {
             fclose(filePtr);
         }
 
-        if (!strcmp(networkStatus, "down"))
+        if (!strcmp(networkStatus, "down")) {
             strcpy(networkString, " ⚠️🌐");
-        else {
+            printFlag = 1;
+        } else {
             FILE* filePtr = fopen("/proc/net/wireless", "r");
             fscanf(filePtr, "%*[^\n]\n%*[^\n]\n %*s %*s %s", networkStatus);
             fclose(filePtr);
 
             sprintf(networkString, " 📶%.0f%%", strtof(networkStatus, NULL) * 100 / 70);
-            fflush(stdout);
         }
     }
 
+    // IP module
+    struct ifaddrs *addresses;
+    getifaddrs(&addresses);
+    struct ifaddrs *addressPtr = addresses;
+    int activeInterfaces = 0;
+
+    while (addressPtr) {
+        if (addressPtr->ifa_addr &&                     // addressStruct is valid
+        addressPtr->ifa_addr->sa_family == AF_INET &&   // interface is of family type INET
+        addressPtr->ifa_flags & IFF_RUNNING &&          // interface is up and running
+        strcmp(addressPtr->ifa_name, "lo")) {           // not loopback interface
+            if(activeInterfaces) strcat(networkString, "+");
+            strcat(networkString, inet_ntoa(((struct sockaddr_in *)addressPtr->ifa_addr)->sin_addr));
+            ++activeInterfaces;
+        }
+        addressPtr = addressPtr->ifa_next;
+    }
+
+    freeifaddrs(addresses);
     printFlag = 1;
 }
 

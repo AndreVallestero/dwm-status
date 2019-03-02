@@ -177,7 +177,7 @@ void update_pkgup(void) {
     } while (ch != EOF);
     pclose(pipePtr);
 
-    FILE* pipePtr = popen("yay -Qu", "r");
+    pipePtr = popen("yay -Qu", "r");
     do {
         ch = fgetc(pipePtr);
         if(ch == '\n')

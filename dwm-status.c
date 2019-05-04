@@ -167,17 +167,7 @@ void update_news(void) {
 void update_pkgup(void) {
     int ch, pkgCount = 0;
 
-    system("pacman -Sy");
-
-    FILE* pipePtr = popen("pacman -Qu", "r");
-    do {
-        ch = fgetc(pipePtr);
-        if(ch == '\n')
-            ++pkgCount;
-    } while (ch != EOF);
-    pclose(pipePtr);
-
-    pipePtr = popen("yay -Qu", "r");
+    FILE* pipePtr = popen("yay -Qu", "r");
     do {
         ch = fgetc(pipePtr);
         if(ch == '\n')
